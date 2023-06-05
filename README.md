@@ -1,31 +1,23 @@
 
 # Website to chatbot
-This tool allows you to create a chatbot for your website by converting each page into embeddings and storing them in a Vector database. The embeddings are then used to give OpenAI’s GPT access to information on your website. When a user types in relevant information, their input is converted into embeddings and fed to the vector database. Once the closest matches are found, GPT analyzes the information from the user and the vector database to return a response.
-
-This project was designed for the McKay School of Education at BYU. Developed by Derek Vawdrey.
+This tool allows you to scrape the current contents of a site and detect where links are used, css classes, and html elements.
 
 # How to use
 1. Download the repository
 2. Install requirements.txt (python3 -m pip install -r ./requirements.txt)
 3. Migrate the database (python3 manage.py makemigrations && python3 manage.py migrate)
+4. Make a .env file in the settings folder with the following text
 ```
     SECRET_KEY=anything_good_here
 ```
-6. Run the commands in the Commands section
-7. Start up the server (python manage.py runserver)
-8. Navigate to the web app and start chatting
+5. Run the commands in the Commands section
 
 # Commands
 ### Convert website into database entries
 
-python manage.py scrape --base-url https://education.byu.edu --html-elements-to-gather div.dept-name,section#content --html_elements_to_ignore span.visually-hidden
+python manage.py scrape --base-url https://education.byu.edu
 
 --base-url (required): The base where you would like the scrapper to start.
---html-elements-to-gather (required): Which html elements should the scraper pull data from? seperated by commas
---html_elements_to_ignore (optional): Which html elements should be ignored?
-### Convert database entries into embeddings
-python manage.py embed --base-url https://education.byu.edu --max-tokens 350
-### Upload embeddings to Vector Database
-This will delete your pinecone index vectors! Do not run if you don't want your pinecone index vectors deleted.
 
-python manage.py upload --base-url https://education.byu.edu
+### Search for pages where links are used
+python manage.py find_links --find-url inserturlhere
