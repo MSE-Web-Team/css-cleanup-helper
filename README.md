@@ -1,5 +1,5 @@
 
-# Website to chatbot
+# Css Cleanup Helper
 This tool allows you to scrape the current contents of a site and detect where links are used, css classes, and html elements.
 
 # How to use
