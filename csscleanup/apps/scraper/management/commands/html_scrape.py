@@ -112,10 +112,10 @@ class Command(BaseCommand):
             for element in soup.find_all(class_=True):
                 classes = element.get('class')
                 for class_name in classes:
-                    self.create_html_element(html_base_url_object, html_page_object, class_name)
+                    self.create_html_element(html_base_url_object, html_page_object, f".{class_name}")
 
             for element in soup.find_all():
-                self.create_html_element(html_base_url_object, html_page_object, element.name)
+                self.create_html_element(html_base_url_object, html_page_object, f"#{element.name}")
 
             # If the crawler gets to a page that requires JavaScript, it will stop the crawl
             if ("You need to enable JavaScript to run this app." in html_text):

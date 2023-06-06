@@ -33,7 +33,7 @@ class Command(BaseCommand):
         page_count = 0
 
         for element in AllHtmlElements:
-            page_url = element.page_url
+            page_url = element.related_html_page.page_url
             if page_url not in url_list:
                 page_count += 1
                 url_list.append(page_url)
