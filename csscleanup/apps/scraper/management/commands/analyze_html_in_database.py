@@ -56,16 +56,26 @@ class Command(BaseCommand):
         css_file_names = {css_file["file_name"] for css_file in css_file_paths}
         js_file_names = {js_file["file_name"] for js_file in js_file_paths}
 
-        for source in css_sources:
-            if source.source in css_file_names:
-                css_file_names.remove(source.source)
+        for css_file_name in css_file_names:
+            unused = True
+            for source in css_sources:
+                if css_file_name in source.source:
+                    unused = False
+                    break
+            if unused:
+                unused_css_files.append(css_file_name)
 
-        for source in js_sources:
-            if source.source in js_file_names:
-                js_file_names.remove(source.source)
 
-        unused_css_files = list(css_file_names)
-        unused_js_files = list(js_file_names)
+        for js_file_name in js_file_names:
+            unused = True
+            for source in js_sources:
+                if js_file_name in source.source:
+                    unused = False
+                    break
+            if unused:
+                unused_js_files.append(js_file_name)
+
+
 
         print(unused_css_files)
         print(unused_js_files)
