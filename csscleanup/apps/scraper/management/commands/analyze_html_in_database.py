@@ -41,12 +41,13 @@ class Command(BaseCommand):
             src = script_tag.get('src')
             if src:
                 script_tags.append(src)
-                obj, created = HtmlSource.objects.get_or_create(name='foo', defaults={'source_name': src})
+                obj, created = HtmlSource.objects.get_or_create(source=src, defaults={'source': src, 'related_base_url': related_base_url, 'source_type': "javascript"})
 
         for link_tag in soup.find_all('link'):
             href = link_tag.get('href')
             if href:
                 link_tags.append(href)
+                obj, created = HtmlSource.objects.get_or_create(source=src, defaults={'source': href, 'related_base_url': related_base_url, 'source_type': "css"})
 
         
         

@@ -29,5 +29,6 @@ class HtmlLink(models.Model):
 class HtmlSource(models.Model):
     related_base_url = models.ForeignKey(HtmlBaseUrl, on_delete=models.CASCADE)
     source = models.CharField(max_length=500, default="")
+    source_type = models.CharField(max_length=500, default="css")
     used = models.BooleanField(default=False)
 
