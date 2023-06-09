@@ -124,7 +124,7 @@ class Command(BaseCommand):
             
 
             # Get the hyperlinks from the URL and add them to the queue
-            for link in self.get_domain_hyperlinks(local_domain, url):
+            for link in self.get_domain_hyperlinks(local_domain, url, html_text):
                 self.create_html_link(html_page_object, link)
                 if link not in seen:
                     queue.append(link)
@@ -132,30 +132,16 @@ class Command(BaseCommand):
         driver.close()
 
     # Function to get the hyperlinks from a URL
-    def get_hyperlinks(self, url):
-        # Try to open the URL and read the HTML
-        try:
-            # Open the URL and read the HTML
-            with urllib.request.urlopen(url, context=ctx) as response:
-                # If the response is not HTML, return an empty list
-                if not response.info().get('Content-Type').startswith("text/html"):
-                    return []
-                # Decode the HTML
-                html = response.read().decode('utf-8')
-        except Exception as e:
-            print(e)
-            return []
-
-        # Create the HTML Parser and then Parse the HTML to get hyperlinks
+    def get_hyperlinks(self, html_text):
         parser = HyperlinkParser()
-        parser.feed(html)
+        parser.feed(html_text)
 
         return parser.hyperlinks
 
     # Function to get the hyperlinks from a URL that are within the same domain
-    def get_domain_hyperlinks(self, local_domain, url):
+    def get_domain_hyperlinks(self, local_domain, html_text):
         clean_links = []
-        for link in set(self.get_hyperlinks(url)):
+        for link in set(self.get_hyperlinks(html_text)):
             clean_link = None
 
             # If the link is a URL, check if it is within the same domain
