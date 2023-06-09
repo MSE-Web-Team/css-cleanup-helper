@@ -5,9 +5,9 @@ from django.utils.translation import gettext as _
 import requests
 import re
 from bs4 import BeautifulSoup
+from selenium import webdriver
 from collections import deque
 from html.parser import HTMLParser
-from requests_html import HTMLSession
 from urllib.parse import urlparse
 import urllib
 import os
@@ -86,6 +86,11 @@ class Command(BaseCommand):
         seen = set([url])
         html_base_url_object = HtmlBaseUrl.objects.get(url=url)
 
+        # edge_options = Options()
+        # edge_options.add_argument("--disable-extensions")
+
+        driver = webdriver.Edge()
+        
         while queue:
             url = queue.pop()
             if self.string_contains_extension(url):
@@ -100,22 +105,18 @@ class Command(BaseCommand):
                 continue
             print(" + " + url)
 
-            html_text = response.text
-            soup = BeautifulSoup(html_text, "html.parser")
+            
+            driver.implicitly_wait(0.5) # seconds
+            driver.get(url)
+
+            html_text = driver.page_source
+            soup = BeautifulSoup(driver.page_source, "html.parser")
             title = url
             if soup.find('title'):
                 title = soup.find('title').text
 
             # Here we will now generate the necessary model for the url
-            html_page_object = self.create_html_page(html_base_url_object, url, title)
-
-            for element in soup.find_all(class_=True):
-                classes = element.get('class')
-                for class_name in classes:
-                    self.create_html_element(html_base_url_object, html_page_object, f".{class_name}")
-
-            for element in soup.find_all():
-                self.create_html_element(html_base_url_object, html_page_object, f"#{element.name}")
+            html_page_object = self.create_html_page(html_base_url_object, url, title, html_text)
 
             # If the crawler gets to a page that requires JavaScript, it will stop the crawl
             if ("You need to enable JavaScript to run this app." in html_text):
@@ -128,6 +129,7 @@ class Command(BaseCommand):
                 if link not in seen:
                     queue.append(link)
                     seen.add(link)
+        driver.close()
 
     # Function to get the hyperlinks from a URL
     def get_hyperlinks(self, url):
@@ -216,14 +218,15 @@ class Command(BaseCommand):
             html_element=html_element
         )
     
-    def create_html_page(self, html_base_url, page_url, title):
+    def create_html_page(self, html_base_url, page_url, title, html):
         """
         Creates a new HtmlPage object and stores it in the database
         """
         return HtmlPage.objects.create(
             related_base_url = html_base_url,
             page_url = page_url,
-            title = title
+            title = title,
+            html = html,
         )
 
     def create_html_link(self, html_page, link):

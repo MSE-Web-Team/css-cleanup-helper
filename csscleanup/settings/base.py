@@ -29,7 +29,7 @@ load_dotenv()
 ALLOWED_HOSTS = []
 
 # Environment variables
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = "asdasd"
 
 # Application definition
 INSTALLED_APPS = [
