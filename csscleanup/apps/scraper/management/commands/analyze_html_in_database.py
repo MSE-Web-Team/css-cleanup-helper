@@ -37,43 +37,35 @@ class Command(BaseCommand):
         soup = BeautifulSoup(page.html, 'html.parser')
 
         # Get all script and link tags with their sources inside the page html
-        script_tags = []
-        link_tags = []
         for script_tag in soup.find_all('script'):
             src = script_tag.get('src')
             if src:
-                script_tags.append(src)
                 obj, created = HtmlSource.objects.get_or_create(source=src, defaults={'source': src, 'related_base_url': related_base_url, 'source_type': "javascript"})
 
         for link_tag in soup.find_all('link'):
             href = link_tag.get('href')
             if href:
-                link_tags.append(href)
                 obj, created = HtmlSource.objects.get_or_create(source=src, defaults={'source': href, 'related_base_url': related_base_url, 'source_type': "css"})
 
     def analyzeDirectory(self, related_base_url, css_file_paths, js_file_paths):
-        css_sources = HtmlSource.objects.filter(related_base_url = related_base_url, source_type="css")
-        js_sources = HtmlSource.objects.filter(related_base_url = related_base_url, source_type="javascript")
+        css_sources = HtmlSource.objects.filter(source_type="css")
+        js_sources = HtmlSource.objects.filter(source_type="javascript")
         unused_css_files = []
         unused_js_files = []
 
-        for css_file in css_file_paths:
-            css_file_name = css_file["file_name"]
-            unused = True
-            for source in css_sources:
-                if source.source.find(css_file_name) != -1:
-                    unused = False
-            if unused:
-                unused_css_files.append(css_file_name)
+        css_file_names = {css_file["file_name"] for css_file in css_file_paths}
+        js_file_names = {js_file["file_name"] for js_file in js_file_paths}
 
-        for js_file in js_file_paths:
-            js_file_name = js_file["file_name"]
-            unused = True
-            for source in js_sources:
-                if source.source.find(js_file_name) != -1:
-                    unused = False
-            if unused:
-                unused_js_files.append(js_file_name)
+        for source in css_sources:
+            if source.source in css_file_names:
+                css_file_names.remove(source.source)
+
+        for source in js_sources:
+            if source.source in js_file_names:
+                js_file_names.remove(source.source)
+
+        unused_css_files = list(css_file_names)
+        unused_js_files = list(js_file_names)
 
         print(unused_css_files)
         print(unused_js_files)
