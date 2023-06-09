@@ -28,9 +28,11 @@ class Command(BaseCommand):
         base_url = HtmlBaseUrl.objects.get(url = options['base_url'])
         html_pages = HtmlPage.objects.filter(related_base_url = base_url)
         for page in html_pages:
-            self.analyzeSources(base_url, page, css_file_paths, js_file_paths)
+            self.analyzeSources(base_url, page)
+        
+        self.analyzeDirectory(base_url, css_file_paths, js_file_paths)
 
-    def analyzeSources(self, related_base_url, page, css_file_paths, js_file_paths):
+    def analyzeSources(self, related_base_url, page):
         # Analyze all <link> and <script> tags for sources and inserts used ones into database
         soup = BeautifulSoup(page.html, 'html.parser')
 
@@ -49,6 +51,33 @@ class Command(BaseCommand):
                 link_tags.append(href)
                 obj, created = HtmlSource.objects.get_or_create(source=src, defaults={'source': href, 'related_base_url': related_base_url, 'source_type': "css"})
 
+    def analyzeDirectory(self, related_base_url, css_file_paths, js_file_paths):
+        css_sources = HtmlSource.objects.filter(related_base_url = related_base_url, source_type="css")
+        js_sources = HtmlSource.objects.filter(related_base_url = related_base_url, source_type="javascript")
+        unused_css_files = []
+        unused_js_files = []
+
+        for css_file in css_file_paths:
+            css_file_name = css_file["file_name"]
+            unused = True
+            for source in css_sources:
+                if source.source.find(css_file_name) != -1:
+                    unused = False
+            if unused:
+                unused_css_files.append(css_file_name)
+
+        for js_file in js_file_paths:
+            js_file_name = js_file["file_name"]
+            unused = True
+            for source in js_sources:
+                if source.source.find(js_file_name) != -1:
+                    unused = False
+            if unused:
+                unused_js_files.append(js_file_name)
+
+        print(unused_css_files)
+        print(unused_js_files)
+            
         
         
 
