@@ -124,7 +124,7 @@ class Command(BaseCommand):
             
 
             # Get the hyperlinks from the URL and add them to the queue
-            for link in self.get_domain_hyperlinks(local_domain, url, html_text):
+            for link in self.get_domain_hyperlinks(local_domain, html_text):
                 self.create_html_link(html_page_object, link)
                 if link not in seen:
                     queue.append(link)
