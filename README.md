@@ -20,5 +20,6 @@ python manage.py scrape --base-url https://education.byu.edu
 
 --base-url (required): The base where you would like the scrapper to start.
 
-### Search for pages where links are used
-python manage.py find_links --find-url inserturlhere
+### Search for css stylesheets that are unused
+
+python3 manage.py analyze_html_in_database --base-url "https://education.byu.edu" --css-directory "/Volumes/education22/Education/web/themes/custom/canvas/css" --js-directory "/Volumes/education22/Education/web/themes/custom/canvas"

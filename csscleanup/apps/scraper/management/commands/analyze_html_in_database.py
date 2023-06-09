@@ -48,8 +48,8 @@ class Command(BaseCommand):
                 obj, created = HtmlSource.objects.get_or_create(source=href, defaults={'source': href, 'related_base_url': related_base_url, 'source_type': "css"})
 
     def analyzeDirectory(self, related_base_url, css_file_paths, js_file_paths):
-        css_sources = HtmlSource.objects.filter(source_type="css")
-        js_sources = HtmlSource.objects.filter(source_type="javascript")
+        css_sources = HtmlSource.objects.filter(related_base_url=related_base_url, source_type="css")
+        js_sources = HtmlSource.objects.filter(related_base_url=related_base_url, source_type="javascript")
         unused_css_files = []
         unused_js_files = []
 
