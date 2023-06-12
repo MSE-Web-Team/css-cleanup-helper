@@ -1,7 +1,7 @@
 import datetime
 from django.core.management.base import BaseCommand, CommandError
-from csscleanup.apps.scraper.models import HtmlBaseUrl, HtmlElement, HtmlPage, HtmlLink, HtmlSource
-import os
+from csscleanup.apps.scraper.models import HtmlBaseUrl, HtmlElement, HtmlPage, HtmlLink, HtmlSource,HtmlSourceAttribute
+import os, re
 from bs4 import BeautifulSoup
 
 class Command(BaseCommand):
@@ -16,7 +16,7 @@ class Command(BaseCommand):
         # code for html analysis
         if options['base_url'] is None or options['css_directory'] is None or options['js_directory'] is None:
             raise CommandError('Please provide base-url, css-directory, and js-directory flag')
-
+        
         css_directory = options['css_directory']
         js_directory = options['js_directory']
         # /Volumes/education22/Education/web/themes
@@ -33,6 +33,7 @@ class Command(BaseCommand):
         self.analyzeDirectory(base_url, css_file_paths, js_file_paths)
 
     def analyzeSources(self, related_base_url, page):
+        HtmlElement.objects.filter(related_base_url=related_base_url).delete()
         # Analyze all <link> and <script> tags for sources and inserts used ones into database
         soup = BeautifulSoup(page.html, 'html.parser')
 
@@ -41,44 +42,92 @@ class Command(BaseCommand):
             src = script_tag.get('src')
             if src:
                 obj, created = HtmlSource.objects.get_or_create(source=src, defaults={'source': src, 'related_base_url': related_base_url, 'source_type': "javascript"})
-
+                if not obj.found_in_site_html:
+                    obj.found_in_site_html = True
+                    obj.save()
         for link_tag in soup.find_all('link'):
             href = link_tag.get('href')
             if href:
                 obj, created = HtmlSource.objects.get_or_create(source=href, defaults={'source': href, 'related_base_url': related_base_url, 'source_type': "css"})
+                if not created:
+                    obj.found_in_site_html = True
+                    obj.save()
+        
+        # Loop through page and store all classes on the site.
+        for html_element in soup.find_all(class_=True):
+            classes = html_element.get('class')
+            for html_class in classes:
+                obj, created = HtmlElement.objects.get_or_create(related_base_url = related_base_url, html_attribute=f".{html_class}", 
+                defaults={'html_attribute':f".{html_class}", 'related_base_url': related_base_url, 'related_html_page': page})
+                if not created:
+                    obj.usage_count = obj.usage_count + 1
+                    obj.save()
 
     def analyzeDirectory(self, related_base_url, css_file_paths, js_file_paths):
-        css_sources = HtmlSource.objects.filter(related_base_url=related_base_url, source_type="css")
-        js_sources = HtmlSource.objects.filter(related_base_url=related_base_url, source_type="javascript")
+        # Pull on sources found on the website
+        class_pattern = r"\.([^\s{]+)"
+        bracket_pattern = r"\[[^\]]*\]"
+        css_sources = HtmlSource.objects.filter(related_base_url=related_base_url, source_type="css", found_in_site_html = True)
+        js_sources = HtmlSource.objects.filter(related_base_url=related_base_url, source_type="javascript", found_in_site_html = True)
         unused_css_files = []
         unused_js_files = []
 
-        css_file_names = {css_file["file_name"] for css_file in css_file_paths}
-        js_file_names = {js_file["file_name"] for js_file in js_file_paths}
 
-        for css_file_name in css_file_names:
+        # Here we loop through all the css/js files in the specified directory and check if they are used on the site
+        for css_file in css_file_paths:
+            used_source = None
             unused = True
             for source in css_sources:
-                if css_file_name in source.source:
+                # If the css file name is found in the source, mark the source as used.
+                if css_file["file_name"] in source.source:
+                    used_source = source
+                    print(css_file["file_path"])
                     unused = False
+                    source.server_relative_url = css_file["file_path"]
+                    source.save()
                     break
             if unused:
-                unused_css_files.append(css_file_name)
+                # Create unused source out of the css_file
+                obj, created = HtmlSource.objects.get_or_create(source=css_file["file_path"], defaults={'source': css_file["file_path"], 'related_base_url': related_base_url, 'source_type': "css", 'found_in_site_html': False})
+                used_source = obj
+            
+            # Now we w
+            with open(css_file["file_path"], "r") as css_file:
+                file_contents = css_file.read()
+            css_classes = re.findall(class_pattern, file_contents)
+            css_classes = [re.sub(r":[^:]+", "", cls) for cls in css_classes]
+            if len(css_classes) > 0:
+                # Remove content enclosed in square brackets
+                css_classes = [re.sub(bracket_pattern, "", cls) for cls in css_classes]
+
+                # Split CSS classes separated by commas and remove leading/trailing whitespace
+                css_classes = [cls.strip() for cls in ",".join(css_classes).split(",")]
+                css_classes = [cls.strip() for cls in ".".join(css_classes).split(".")]
+                css_classes = [cls.strip() for cls in ">".join(css_classes).split(">")]
+                css_classes = [cls for cls in css_classes if ')' not in cls and ';' not in cls]
+
+                for css_class in css_classes:
+                    database_element = HtmlElement.objects.filter(related_base_url=related_base_url, html_attribute = f".{css_class}")
+                    found_in_site_html = False
+                    if database_element:
+                        found_in_site_html = True
+                    obj,created = HtmlSourceAttribute.objects.get_or_create(related_html_source = used_source, html_attribute = f".{css_class}", defaults={'related_html_source': used_source, 'html_attribute': f".{css_class}", 'found_in_site_html': found_in_site_html})
+                    if not created:
+                        obj.found_in_site_html = found_in_site_html
 
 
-        for js_file_name in js_file_names:
+        for js_file in js_file_paths:
             unused = True
             for source in js_sources:
-                if js_file_name in source.source:
+                # If true this means that this file is used
+                if js_file["file_name"] in source.source:
                     unused = False
+                    source.server_relative_url = js_file["file_path"]
+                    source.save()
                     break
             if unused:
-                unused_js_files.append(js_file_name)
-
-
-
-        print(unused_css_files)
-        print(unused_js_files)
+                # Create unused source out of the js_file
+                obj, created = HtmlSource.objects.get_or_create(source=js_file["file_path"], defaults={'source': js_file["file_path"], 'related_base_url': related_base_url, 'source_type': "javascript", "found_in_site_html": False})
             
         
         

@@ -5,3 +5,5 @@ migrations/
 __pycache__/
 .DS_Store
 .vscode
+csscleanup/db.sqlite3-journal
+.DS_Store

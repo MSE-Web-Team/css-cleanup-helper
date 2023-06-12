@@ -23,3 +23,7 @@ python manage.py scrape --base-url https://education.byu.edu
 ### Search for css stylesheets that are unused
 
 python3 manage.py analyze_html_in_database --base-url "https://education.byu.edu" --css-directory "/Volumes/education22/Education/web/themes/custom/canvas/css" --js-directory "/Volumes/education22/Education/web/themes/custom/canvas"
+
+--base-url (required): What website you are searching the directories for
+--css-directory (required): What directory do you want to search for css files?
+--js-directoy (required): same as css-directory

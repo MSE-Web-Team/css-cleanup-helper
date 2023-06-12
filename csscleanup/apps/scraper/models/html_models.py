@@ -20,7 +20,8 @@ class HtmlPage(models.Model):
 class HtmlElement(models.Model):
     related_base_url = models.ForeignKey(HtmlBaseUrl, on_delete=models.CASCADE)
     related_html_page = models.ForeignKey(HtmlPage, on_delete=models.CASCADE)
-    html_element = models.CharField(max_length=200, default="")
+    html_attribute = models.CharField(max_length=200, default="")
+    usage_count = models.IntegerField(default=1)
 
 class HtmlLink(models.Model):
     related_html_page = models.ForeignKey(HtmlPage, on_delete=models.CASCADE)
@@ -29,6 +30,12 @@ class HtmlLink(models.Model):
 class HtmlSource(models.Model):
     related_base_url = models.ForeignKey(HtmlBaseUrl, on_delete=models.CASCADE)
     source = models.CharField(max_length=500, default="")
+    server_relative_url = models.CharField(max_length=500, default="")
     source_type = models.CharField(max_length=500, default="css")
-    used = models.BooleanField(default=False)
+    found_in_site_html = models.BooleanField(default=True)
+
+class HtmlSourceAttribute(models.Model):
+    related_html_source = models.ForeignKey(HtmlSource, on_delete=models.CASCADE)
+    html_attribute = models.CharField(max_length=200, default="")
+    found_in_site_html = models.BooleanField(default=False)
 
