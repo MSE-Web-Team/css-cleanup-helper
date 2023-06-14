@@ -14,13 +14,13 @@ This tool allows you to scrape the current contents of a site and detect where l
 6. Run the commands in the Commands section
 
 # Commands
-### Convert website into database entries
+### Convert website into database entries (IF YOU DONT HAVE DATABASE)
 
 `python manage.py scrape --base-url https://education.byu.edu`  
   
 `--base-url` (required): The base where you would like the scrapper to start.
 
-### Search for css stylesheets that are unused
+### Search for css stylesheets that are unused (IF YOU DONT HAVE DATABASE)
 
 `python3 manage.py analyze_html_in_database --base-url "https://education.byu.edu" --css-directory "/Volumes/education22/Education/web/themes/custom/canvas/css" --js-directory "/Volumes/education22/Education/web/themes/custom/canvas"`
 
