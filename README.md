@@ -14,7 +14,6 @@ This tool allows you to scrape the current contents of a site and detect where l
 6. Run the commands in the Commands section
 
 # Commands -
-## Feel free to progam more commands in csscleanup/apps/scraper/management/commands
 ### Convert website into database entries (IF YOU DONT HAVE DATABASE)
 
 `python manage.py scrape --base-url https://education.byu.edu`  
@@ -34,3 +33,5 @@ This tool allows you to scrape the current contents of a site and detect where l
 `python3 manage.py css_usage --base-url "https://education.byu.edu" --html-attribute .whatever`  
   
 `--html-attribute` is the attribute you want to search for (optional)
+
+## Feel free to progam more commands in csscleanup/apps/scraper/management/commands
