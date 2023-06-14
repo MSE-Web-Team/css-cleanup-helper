@@ -27,13 +27,13 @@ class Command(BaseCommand):
         # Get all pages stored in the database by base url
         base_url = HtmlBaseUrl.objects.get(url = options['base_url'])
         html_pages = HtmlPage.objects.filter(related_base_url = base_url)
+        HtmlElement.objects.filter(related_base_url=related_base_url).delete()
         for page in html_pages:
             self.analyzeSources(base_url, page)
         
         self.analyzeDirectory(base_url, css_file_paths, js_file_paths)
 
     def analyzeSources(self, related_base_url, page):
-        HtmlElement.objects.filter(related_base_url=related_base_url).delete()
         # Analyze all <link> and <script> tags for sources and inserts used ones into database
         soup = BeautifulSoup(page.html, 'html.parser')
 

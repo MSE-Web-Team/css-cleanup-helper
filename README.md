@@ -27,3 +27,9 @@ python3 manage.py analyze_html_in_database --base-url "https://education.byu.edu
 --base-url (required): What website you are searching the directories for
 --css-directory (required): What directory do you want to search for css files?
 --js-directoy (required): same as css-directory
+
+### Search for usage of specific class and/or highest usage classes
+
+python3 manage.py css_usage --base-url "https://education.byu.edu" --html-attribute .whatever
+
+--html-attribute is the attribute you want to search for (optional)
