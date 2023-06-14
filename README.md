@@ -13,7 +13,7 @@ This tool allows you to scrape the current contents of a site and detect where l
 5. Install the Webdrive for Edge (https://selenium-python.readthedocs.io/installation.html)
 6. Run the commands in the Commands section
 
-# Commands
+# Commands - Feel free to progam more commands in csscleanup/apps/scraper/management/commands
 ### Convert website into database entries (IF YOU DONT HAVE DATABASE)
 
 `python manage.py scrape --base-url https://education.byu.edu`  
