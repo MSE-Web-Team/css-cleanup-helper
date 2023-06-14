@@ -35,3 +35,6 @@ This tool allows you to scrape the current contents of a site and detect where l
 `--html-attribute` is the attribute you want to search for (optional)
 
 ## Feel free to progam more commands in csscleanup/apps/scraper/management/commands
+Here are some that could be useful:
+1. A command that searches where a specific html attribute is used in the html (can use HtmlPage object)
+2. A command that shows where a CSS style is in the css files in a diretory
