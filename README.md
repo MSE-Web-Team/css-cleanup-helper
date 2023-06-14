@@ -10,7 +10,7 @@ This tool allows you to scrape the current contents of a site and detect where l
 ```
     SECRET_KEY=anything_good_here
 ```
-5. Install the Webdrive for Edge (https://selenium-python.readthedocs.io/installation.html)
+5. Install the [Webdrive for Edge](https://selenium-python.readthedocs.io/installation.html)
 6. Run the commands in the Commands section
 
 ## Commands -
