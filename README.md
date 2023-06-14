@@ -1,5 +1,5 @@
 
-# Css Cleanup Helper - Uses Django
+# Css Cleanup Helper - Uses Django Framework
 This tool allows you to scrape the current contents of a site and detect where links are used, css classes, and html elements.
 
 # How to use
