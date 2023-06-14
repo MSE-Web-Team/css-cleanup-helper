@@ -6,3 +6,4 @@ __pycache__/
 .DS_Store
 .vscode
 csscleanup/db.sqlite3-journal
+venv/
