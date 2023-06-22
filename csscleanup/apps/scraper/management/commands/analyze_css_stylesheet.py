@@ -25,9 +25,16 @@ class Command(BaseCommand):
             file_contents = css_file.read()
         css_classes = re.findall(class_pattern, file_contents)
         css_classes = [re.sub(r":[^:]+", "", cls) for cls in css_classes]
+        unique = []
+        classes = {}
         for css_class in css_classes:
-            element = HtmlElement.objects.filter(related_base_url=base_url).filter(html_attribute=f".{css_class}")
-            if(element):
-                print(element.html_attribute + ": Used " + str(element.usage_count))
-            else:
-                print(f".{css_class}: Used 0 times")
+            if(css_class not in unique and ")" not in css_class and ";" not in css_class and "," not in css_class and "rem" not in css_class and "7s" not in css_class):
+                unique.append(css_class)
+                element = HtmlElement.objects.filter(related_base_url=base_url).filter(html_attribute=f".{css_class}").first()
+                if(element):
+                    classes[f".{css_class}"] = int(element.usage_count)
+                else:
+                    classes[f".{css_class}"] = 0
+                    
+        dict(sorted(classes.items(), key=lambda item: item[1]))
+        print(classes)
