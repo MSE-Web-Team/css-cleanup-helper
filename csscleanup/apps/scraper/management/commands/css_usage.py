@@ -8,6 +8,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--base-url', type=str)
         parser.add_argument('--html-attribute', type=str)
+        parser.add_argument('--verbose', action='store_true', help='print the paths to the locations found')
 
     def handle(self, *args, **options):
         if options['base_url'] is None:
