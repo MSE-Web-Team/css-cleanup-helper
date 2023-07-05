@@ -28,7 +28,8 @@ class Command(BaseCommand):
         unique = []
         classes = {}
         for css_class in css_classes:
-            if(css_class not in unique and ")" not in css_class and ";" not in css_class and "'" not in css_class and "`" not in css_class and "," not in css_class and "rem" not in css_class and "7s" not in css_class):
+            # Please don't kill me, feel free to turn this into an array :)
+            if(css_class not in unique and ")" not in css_class and ";" not in css_class and "}" not in css_class and "{" not in css_class and "'" not in css_class and "`" not in css_class and "," not in css_class and "rem" not in css_class and "7s" not in css_class):
                 unique.append(css_class)
                 element = HtmlElement.objects.filter(related_base_url=base_url).filter(html_attribute=f".{css_class}").first()
                 if(element):
