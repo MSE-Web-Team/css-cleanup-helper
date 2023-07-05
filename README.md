@@ -30,6 +30,8 @@ This tool allows you to scrape the current contents of a site and detect where l
 
 ### Search for usage of classes in a specific css stylesheet:
 
+This isn't completely accurate as it will pull things like urls, and multiline classes like .card-title>h4 but it does an alright job at pulling the css classes. Obviously could be improved, but this was just put together in a couple minutes.
+
 `python3 manage.py analyze_css_stylesheet --base-url "https://education.byu.edu" --css-file-path "PATH_TO_CSS_PATH"`
 
 ### Search for usage of specific class and/or highest usage classes
