@@ -28,6 +28,10 @@ This tool allows you to scrape the current contents of a site and detect where l
 `--css-directory` (required): What directory do you want to search for css files?  
 `--js-directoy` (required): same as css-directory
 
+### Search for usage of classes in a specific css stylesheet:
+
+`python3 manage.py analyze_css_stylesheet --base-url "https://education.byu.edu" --css-file-path "PATH_TO_CSS_PATH"
+
 ### Search for usage of specific class and/or highest usage classes
 
 `python3 manage.py css_usage --base-url "https://education.byu.edu" --html-attribute .whatever`  
