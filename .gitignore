@@ -1,9 +1,5 @@
-.env
-*.sqlite3
-*/__pycache__
-migrations/
-__pycache__/
-.DS_Store
-.vscode
-csscleanup/db.sqlite3-journal
 venv/
+.vscode/
+clone/
+__pycache__
+output/
