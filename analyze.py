@@ -1,97 +1,204 @@
 from bs4 import BeautifulSoup
 from glob import glob
 import os
-import cssutils
+import re
+
+def generate_table(collumns,content):
+    padding_list = list()
+    table_string = "| "
+    for i,collumn in enumerate(collumns):
+        padding = len(collumn)
+        for c in content[i]:
+            if len(str(c))>padding:
+                padding = len(c)
+        padding_list.append(padding)
+        if i != 0:
+            table_string += " | "
+        table_string += collumn.ljust(padding," ")
+    table_string += " |\n| "
+    for i,collumn in enumerate(collumns):
+        if i != 0:
+            table_string += " | "
+        if type(content[i][0])==int:
+            table_string += ('-'*(padding_list[i]-1))+':'
+        else:
+            table_string += ('-'*padding_list[i])
+    table_string += " |\n"
+    for j in range(len(content[0])):
+        for i in range(len(collumns)):
+            if i==0:
+                table_string += "| "
+            else:
+                table_string += " | "
+            if type(content[i][j]) == int:
+                table_string += str(content[i][j]).rjust(padding_list[i]," ")
+            else:
+                table_string += str(content[i][j]).ljust(padding_list[i]," ")
+            if i==len(collumns)-1:
+                table_string += " |\n"
+    return table_string
+
 
 class HtmlClass:
-    def __init__(self,name):
+    def __init__(self,name,origin):
         self.name = name
+        self.origin = origin
         self.uses = 1
+    
+    def __eq__(self,other):
+        return self.name == other
 
 class HtmlClasses:
     def __init__(self):
         self.class_list = []
     
-    def add_class(self,classname):
+    def add_class(self,classname,origin):
         found = False
         for html_class in self.class_list:
-            if html_class.name == classname:
+            if html_class.name == classname and html_class.origin == origin:
                 found = True
                 html_class.uses += 1
                 break
         if not found:
-            self.class_list.append(HtmlClass(classname))
+            self.class_list.append(HtmlClass(classname,origin))
 
-    def sort(self):
+    def sort_by_uses(self):
         self.class_list.sort(key=lambda x: x.uses,reverse=True)
-    
-    def generate_table(self):
-        self.sort()
-        name_padding = len("Class Name")
-        uses_padding = len("Uses")
+
+    def update_uses(self,classname):
         for html_class in self.class_list:
-            if len(html_class.name) > name_padding:
-                name_padding = len(html_class.name)
-            if len(str(html_class.uses))>uses_padding:
-                uses_padding = len(str(html_class.uses))
-        table = "| "+"Class Name".ljust(name_padding," ")+" | "+"Uses".ljust(uses_padding," ")+" |\n"
-        table += "| "+("-"*name_padding)+" | "+("-"*(uses_padding-1))+": |\n"
-        for html_class in self.class_list:
-            table += "| "+html_class.name.ljust(name_padding," ")+" | "+str(html_class.uses).rjust(uses_padding," ")+" |\n"
+            if html_class.name == classname:
+                html_class.uses += 1
+                return True
+        return False
+
+    def generate_table_of_uses(self):
+        self.sort_by_uses()
+        name_table = []
+        origin_table = []
+        uses_table = []
+        for _class in self.class_list:
+            name_table.append(_class.name)
+            origin_table.append(_class.origin)
+            uses_table.append(_class.uses)
+        table = generate_table(["Class Name","Origin","Uses"],[name_table,origin_table,uses_table])
         return table
 
-stylesheets = [
-"core/modules/system/css/components/ajax-progress.module.css",
-"core/modules/system/css/components/align.module.css",
-"core/modules/system/css/components/autocomplete-loading.module.css",
-"core/modules/system/css/components/fieldgroup.module.css",
-"core/modules/system/css/components/container-inline.module.css",
-"core/modules/system/css/components/clearfix.module.css",
-"core/modules/system/css/components/details.module.css",
-"core/modules/system/css/components/hidden.module.css",
-"core/modules/system/css/components/item-list.module.css",
-"core/modules/system/css/components/js.module.css",
-"core/modules/system/css/components/nowrap.module.css",
-"core/modules/system/css/components/position-container.module.css",
-"core/modules/system/css/components/progress.module.css",
-"core/modules/system/css/components/reset-appearance.module.css",
-"core/modules/system/css/components/resize.module.css",
-"core/modules/system/css/components/sticky-header.module.css",
-"core/modules/system/css/components/system-status-counter.css",
-"core/modules/system/css/components/system-status-report-counters.css",
-"core/modules/system/css/components/system-status-report-general-info.css",
-"core/modules/system/css/components/tabledrag.module.css",
-"core/modules/system/css/components/tablesort.module.css",
-"core/modules/system/css/components/tree-child.module.css",
-"core/modules/filter/css/filter.caption.css",
-"core/modules/media/css/filter.caption.css",
-"core/modules/views/css/views.module.css",
-"modules/contrib/flickity/vendor/flickity/flickity.min.css",
-"themes/custom/canvas/less/styles.css",
-"themes/custom/canvas/css/style.css",
-"themes/custom/canvas/css/bootstrap.css",
-"themes/custom/canvas/css/font-icons.css",
-"themes/custom/canvas/css/imports/shortcodes/tabs.css",
-"themes/custom/canvas/css/mckay-footer.css",
-"themes/custom/canvas/css/mckay-menu.css",
-"themes/custom/canvas/css/mckay-style.css"]
+class Stylesheet:
+    def __init__(self,url,content,class_list):
+        self.url = url
+        self.exists = False
+        self.classes = []
+        self.inline = False
+        self.id_selectors = []
+        if content:
+            self.inline = True
+            self.exists = True
+            self.parse(content)
+        else:
+            if os.path.exists(url):
+                self.exists = True
+                with open(self.url,"r") as f:
+                    css = f.read()
+                    self.parse(css)
+        if self.exists:
+            self.populate(class_list)
 
-additional_stylesheets = [
-"cas/css/cas.cs",
-"modules/contrib/webform/css/webform.element.message.css",
-"modules/contrib/webform/css/webform.form.css",
-"modules/contrib/webform/css/webform.element.details.toggle.css",
-"modules/contrib/webform/css/webform.ajax.css",
-"core/modules/layout_discovery/layouts/onecol/onecol.css",
-"modules/contrib/webform/css/webform.composite.css",
-"modules/contrib/webform/css/webform.element.options.css",
-"core/assets/vendor/jquery.ui/themes/base/core.css",
-"core/assets/vendor/jquery.ui/themes/base/theme.css",
-"themes/custom/canvas/third-party/3dflipbook/jquery-plugin/deploy/css/flipbook.style.css"]
+    def populate(self,class_list):
+        for _class in self.classes:
+            class_list.add_class(_class,self.url)
+
+    def parse(self,css):
+        css = re.sub("\/\*[\s\S]*?\*\/","",css) #Remove comments
+        #This method should get most of the class names, but it's not guranteed to get all of them
+        classes = re.findall("\.[a-zA-Z_][\w:-]*(?![^\{]*\})",css)
+        classes = self.remove_colon_from_names(classes)
+        classes = list(set(classes))
+        for i in range(len(classes)):
+            classes[i] = classes[i].replace(".","")
+        #print(f"Classes {self.url}: {classes}")
+        ids = re.findall("\#[a-zA-Z_][\w:-]*(?![^\{]*\})",css)
+        ids = self.remove_colon_from_names(ids)
+        ids = list(set(ids))
+        for i in range(len(ids)):
+            ids[i] = ids[i].replace("#","")
+        #print(f"IDs {self.url}: {ids}")
+        self.classes = classes
+        self.id_selectors = ids 
+    
+    def remove_colon_from_names(self,names):
+        updated_names = []
+        for name in names:
+            if name.find(":") == -1:
+                updated_names.append(name)
+        return updated_names
+            
+    def __repr__(self):
+        return f"Stylesheet: '{self.url}' : Exists {self.exists} : Inline {self.inline}"
+
+
+class Stylesheets:
+    def __init__(self,classes,verbose):
+        self.sheets = []
+        self.class_list = classes
+        self.verbose = verbose
+    
+    def add(self,url,content=None):
+        found = False
+        for sheet in self.sheets:
+            if sheet.url == url:
+                found = True
+                break
+        if not found:
+            if self.verbose:
+                print(f" Reading Stylesheet '{url}'")
+            self.sheets.append(Stylesheet(url,content,self.class_list))
+    
+    def sort_by_number_of_classes(self):
+        self.sheets.sort(key=lambda x: len(x.classes),reverse=True)
+
+    def generate_table(self):
+        self.sort_by_number_of_classes()
+        url_list = []
+        exists_list = []
+        class_num_list = []
+        id_num_list = []
+        inline_list = []
+        for stylesheet in self.sheets:
+            url_list.append(stylesheet.url)
+            exists_list.append(stylesheet.exists)
+            inline_list.append(stylesheet.inline)
+            class_num_list.append(len(stylesheet.classes))
+            id_num_list.append(len(stylesheet.id_selectors))
+        return generate_table(["File","Exists","Is Inline","Number of Classes","Number of IDs"],[url_list,exists_list,inline_list,class_num_list,id_num_list])
+
+    def __repr__(self):
+        string = ""
+        for sheet in self.sheets:
+            string += str(sheet)+'\n'
+        return string
 
 #todo parse each stylesheet as it's added into the stylesheets array in analysisclass for BOTH classes and id selectors
 #add a varible in the htmlclass class for source stylesheet (should be the html file if class comes from a style tag)
 #parse all style tags if they exist in an html file
+class NoDefinitionClasses:
+    def __init__(self):
+        self.list = []
+    
+    def add(self,name,file):
+        for item in self.list:
+            if item["name"] == name and item["file"] == file:
+                return
+        self.list.append({"name":name,"file":file})
+    
+    def generate_table(self):
+        classname_list = []
+        url_list = []
+        for _class in self.list:
+            classname_list.append(_class["name"])
+            url_list.append(_class["file"])
+        return generate_table(["Class Name","File"],[classname_list,url_list])
+
 
 class AnalysisClass:
     def __init__(self,html_dir,markdown_dir,verbose):
@@ -107,6 +214,8 @@ class AnalysisClass:
         self.markdown_dir = markdown_dir
         self.verbose = verbose
         self.classes = HtmlClasses()
+        self.stylesheets = Stylesheets(self.classes,self.verbose)
+        self.no_definition_classes = NoDefinitionClasses()
         
     def start(self):
         cwd = os.getcwd()
@@ -114,11 +223,13 @@ class AnalysisClass:
         html_files = glob("**/*.html",recursive=True)
         if self.verbose:
             print("Analyzing html files for class usage")
-        for file in html_files:
+        for i,file in enumerate(html_files):
             if self.verbose:
-                print(f" Analyzing '{file}'")
+                print(f" ({str(i+1).zfill(len(str(len(html_files))))}/{str(len(html_files))}) Analyzing '{file}'")
             self.analyze_file(file)
             #break
+        if self.verbose:
+            print(self.stylesheets)
         os.chdir(cwd)
         self.write_output()
     
@@ -134,21 +245,31 @@ class AnalysisClass:
                         if stylesheet.find("?"):
                             stylesheet = stylesheet[0:stylesheet.find("?")]
                         stylesheet = stylesheet[1:]
-                        if stylesheet not in stylesheets:
-                            print(stylesheet)
-                            stylesheets.append(stylesheet)
+                        self.stylesheets.add(stylesheet)
+            css_style = 1
             if "style" in tags:
-                pass
+                for style in soup.find_all("style"):
+                    self.stylesheets.add(file+"_style_"+str(css_style),style.get_text())
+                    css_style += 1
             for tag in tags:
                 for i in soup.find_all(tag):
                     if i.has_attr("class") and len(i["class"]) != 0:
                         for j in i["class"]:
-                            self.classes.add_class(j)
+                            if not self.classes.update_uses(j):
+                                self.no_definition_classes.add(j,file)
+
     
     def write_output(self):
         os.chdir(self.markdown_dir)
         if self.verbose:
             print("Writing Class Usage Table")
         with open("class_usage.md","w") as f:
-            f.write(self.classes.generate_table())
+            f.write("# Class Usage\n")
+            f.write(self.classes.generate_table_of_uses())
+        with open("not_defined_classes.md","w") as f:
+            f.write("# Classes With No Definitions in stylesheets\n## Note: Most of these are probably in css from outsite the site, or from errors in parsing classes")
+            f.write(self.no_definition_classes.generate_table())
+        with open("stylesheets.md","w") as f:
+            f.write("# Stylesheets\n")
+            f.write(self.stylesheets.generate_table())
     
