@@ -268,17 +268,17 @@ class AnalysisClass:
     def write_output(self):
         os.chdir(self.markdown_dir)
         if self.verbose:
-            print("Writing Class Usage Table")
+            print("Writing class_usage.md")
         with open("class_usage.md","w") as f:
             f.write("# Class Usage\n")
             f.write(self.classes.generate_table_of_uses())
         if self.verbose:
-            print("Writing Class Not Defined Table")
+            print("Writing not_defined_classes.md")
         with open("not_defined_classes.md","w") as f:
             f.write("# Classes With No Definitions in stylesheets\n## Note: Most of these are probably in css from outsite the site, or from errors in parsing classes\n")
             f.write(self.no_definition_classes.generate_table())
         if self.verbose:
-            print("Writing Stylesheets Table")
+            print("Writing stylesheets.md")
         with open("stylesheets.md","w") as f:
             f.write("# Stylesheets\n")
             f.write(self.stylesheets.generate_table())
