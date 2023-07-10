@@ -105,6 +105,7 @@ class HtmlClasses:
         return out_string
 
     def write_list_of_all_class_use(self,file):
+        self.sort_by_uses()
         for _class in self.class_list:
             file.write(self.generate_table_of_class_use(_class))
 
