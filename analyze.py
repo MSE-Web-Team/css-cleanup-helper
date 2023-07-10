@@ -42,7 +42,7 @@ class HtmlClass:
     def __init__(self,name,origin):
         self.name = name
         self.origin = origin
-        self.uses = 1
+        self.uses = 0
     
     def __eq__(self,other):
         return self.name == other
