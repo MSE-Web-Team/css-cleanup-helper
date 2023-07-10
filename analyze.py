@@ -42,7 +42,7 @@ class HtmlClass:
     def __init__(self,name,origin):
         self.name = name
         self.origin = origin
-        self.uses = 0
+        self.uses = []
     
     def __eq__(self,other):
         return self.name == other
@@ -58,12 +58,12 @@ class HtmlClasses:
         self.class_list.append(HtmlClass(classname,origin))
 
     def sort_by_uses(self):
-        self.class_list.sort(key=lambda x: x.uses,reverse=True)
+        self.class_list.sort(key=lambda x: len(x.uses),reverse=True)
 
-    def update_uses(self,classname):
+    def update_uses(self,classname,filename):
         for html_class in self.class_list:
             if html_class.name == classname:
-                html_class.uses += 1
+                html_class.uses.append(filename)
                 if classname[0] != "#":
                     html_class.origin.class_uses += 1
                 else:
@@ -79,9 +79,34 @@ class HtmlClasses:
         for _class in self.class_list:
             name_table.append(_class.name)
             origin_table.append(_class.origin.url)
-            uses_table.append(_class.uses)
+            uses_table.append(len(_class.uses))
         table = generate_table(["Class Name","Origin","Uses"],[name_table,origin_table,uses_table])
         return table
+    
+    def generate_table_of_class_use(self,_class):
+        if len(_class.uses) == 0:
+            return ""
+        out_string = f"\n## Usage for '{_class.name}' from '{_class.origin.url}'\n"
+        used_files = list(set(_class.uses)) #remove duplicates
+        uses_dict = []
+        for file in used_files:
+            uses_num = 0
+            for file2 in _class.uses:
+                if file == file2:
+                    uses_num += 1
+            uses_dict.append({"uses": uses_num,"name": file})
+        uses_dict.sort(key=lambda x: x["uses"],reverse=True)
+        name_list = []
+        uses_list = []
+        for use in uses_dict:
+            name_list.append(use["name"])
+            uses_list.append(use["uses"])
+        out_string += generate_table(["File Name","Uses"],[name_list,uses_list])
+        return out_string
+
+    def write_list_of_all_class_use(self,file):
+        for _class in self.class_list:
+            file.write(self.generate_table_of_class_use(_class))
 
 class Stylesheet:
     def __init__(self,url,content,class_list):
@@ -131,7 +156,7 @@ class Stylesheet:
     def get_unused(self,class_list):
         unused = 0
         for _class in class_list:
-            if _class.origin == self and _class.uses == 0:
+            if _class.origin == self and len(_class.uses) == 0:
                 unused += 1
         self.unused = unused
 
@@ -272,11 +297,11 @@ class AnalysisClass:
                 for i in soup.find_all(tag):
                     if i.has_attr("class") and len(i["class"]) != 0:
                         for j in i["class"]:
-                            if not self.classes.update_uses(j):
+                            if not self.classes.update_uses(j,file):
                                 self.no_definition_classes.add(j,file)
                     if i.has_attr("id") and len(i["id"]) != 0:
                         id = '#'+i["id"]
-                        if not self.classes.update_uses(id):
+                        if not self.classes.update_uses(id,file):
                             self.no_definition_classes.add(id,file)
 
     def write_output(self):
@@ -296,4 +321,9 @@ class AnalysisClass:
         with open("stylesheets.md","w") as f:
             f.write("# Stylesheets\n")
             f.write(self.stylesheets.generate_table())
+        if self.verbose:
+            print("Writing all_class_use.md")
+        with open("all_class_use.md","w") as f:
+            f.write("# All Classes (that are used)\n")
+            self.classes.write_list_of_all_class_use(f)
     

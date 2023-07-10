@@ -20,6 +20,7 @@ To Run: python3 css.py scrape --base-url https://education.byu.edu/ --output-dir
     2. Install a [Webdriver](https://selenium-python.readthedocs.io/installation.html) for the browser you wish to scrape the site with.
 4. Scrape the site (`python3 css.py scrape --base-url https://education.byu.edu/ --output-dir clone/ --webdriver chrome --verbose --use-sitemap`  )
     * Replace the webdriver with whatever web browser you want to use to scrape (options are chrome,firefox,edge, and safari)
+    * You can try scraping a local site, but ddev seems to have issues with https on some pages
 5. Analyze the local clone of the site (`python3 css.py analyze --html-dir clone/ --markdown-dir output --verbose`)
     1. This will take some time (especially if the --inline-styles flag is used)
     2. The output will be in markdown files in the directory defined by --markdown-dir
