@@ -92,6 +92,7 @@ class Stylesheet:
         self.id_selectors = []
         self.class_uses = 0
         self.id_uses = 0
+        self.unused = 0
         if content:
             self.inline = True
             self.exists = True
@@ -127,6 +128,13 @@ class Stylesheet:
         self.classes = classes
         self.id_selectors = ids
     
+    def get_unused(self,class_list):
+        unused = 0
+        for _class in class_list:
+            if _class.origin == self and _class.uses == 0:
+                unused += 1
+        self.unused = unused
+
     def remove_colon_from_names(self,names):
         updated_names = []
         for name in names:
@@ -157,8 +165,13 @@ class Stylesheets:
     def sort_by_number_of_classes(self):
         self.sheets.sort(key=lambda x: len(x.classes),reverse=True)
 
+    def get_unused_classes(self):
+        for stylesheet in self.sheets:
+            stylesheet.get_unused(self.class_list.class_list)
+
     def generate_table(self):
         self.sort_by_number_of_classes()
+        self.get_unused_classes()
         url_list = []
         exists_list = []
         class_num_list = []
@@ -166,6 +179,7 @@ class Stylesheets:
         inline_list = []
         class_uses_list = []
         id_uses_list = []
+        unused_class_list = []
         for stylesheet in self.sheets:
             url_list.append(stylesheet.url)
             exists_list.append(stylesheet.exists)
@@ -174,8 +188,8 @@ class Stylesheets:
             id_num_list.append(len(stylesheet.id_selectors))
             class_uses_list.append(stylesheet.class_uses)
             id_uses_list.append(stylesheet.id_uses)
-            
-        return generate_table(["File","Exists","Is Inline","Number of Classes","Number of IDs","Class Uses","Id Uses"],[url_list,exists_list,inline_list,class_num_list,id_num_list,class_uses_list,id_uses_list])
+            unused_class_list.append(stylesheet.unused)
+        return generate_table(["File","Exists","Is Inline","Number of Classes","Number of IDs","Class Uses","Id Uses","Unused Classes+IDs"],[url_list,exists_list,inline_list,class_num_list,id_num_list,class_uses_list,id_uses_list,unused_class_list])
 
     def __repr__(self):
         string = ""
