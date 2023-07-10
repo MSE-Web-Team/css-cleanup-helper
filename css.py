@@ -22,8 +22,9 @@ def scrape_html(base_url,output_dir,webdriver,verbose,use_sitemap,custom_localdo
 @click.option("--html-dir",type=str,required=True,help="The root directory for html to analyze")
 @click.option("--markdown-dir",type=str,required=True,help="The directory the results will go into")
 @click.option("--verbose/--quiet",required=False,help="Extra output",default=False)
-def analyze_html(html_dir,markdown_dir,verbose):
-    analysis = analyze.AnalysisClass(html_dir,markdown_dir,verbose)
+@click.option("--inline-styles/--no-inline-styles",required=False,default=False,help="View html <style> tags as their own stylesheets")
+def analyze_html(html_dir,markdown_dir,verbose,inline_styles):
+    analysis = analyze.AnalysisClass(html_dir,markdown_dir,verbose,inline_styles)
     analysis.start()
 
 

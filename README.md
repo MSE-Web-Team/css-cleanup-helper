@@ -17,39 +17,36 @@ To Run: python3 css.py scrape --base-url https://education.byu.edu/ --output-dir
     * If you are using vscode: Make sure you are using the venv Python interpreter.
         1. Hit control (or command) + shift + p and search for "Python: Select Interpreter".
         2. look for the one named "venv" and select it.
-4. Get a database that the script can use to scrape the website using (`python3 manage.py makemigrations && python3 manage.py migrate`).
-    * When it has been created, place it in the "csscleanup" directory (not the "css-cleanup-helper" directory)
-    * Ensure it is in `csscleanup/db.sqlite3`
-5. Scrape your local site (`python3 manage.py html_scrape --base-url https://127.0.0.1:32768/`  )
+    2. Install a [Webdriver](https://selenium-python.readthedocs.io/installation.html) for the browser you wish to scrape the site with.
+4. Scrape the site (`python3 css.py scrape --base-url https://education.byu.edu/ --output-dir clone/ --webdriver chrome --verbose --use-sitemap`  )
+    * Replace the webdriver with whatever web browser you want to use to scrape (options are chrome,firefox,edge, and safari)
+5. Analyze the local clone of the site (`python3 css.py analyze --html-dir clone/ --markdown-dir output --verbose`)
+    1. This will take some time (especially if the --inline-styles flag is used)
+    2. The output will be in markdown files in the directory defined by --markdown-dir
 
 ## Commands -
-### Convert website into database entries (IF YOU DONT HAVE DATABASE)
+### Scrape the website
 
-`python manage.py scrape --base-url https://education.byu.edu`  
+`python3 css.py scrape --base-url https://education.byu.edu/ --output-dir clone/ --webdriver chrome --verbose --use-sitemap`  
   
 `--base-url` (required): The base where you would like the scrapper to start.
+`--output-dir` (required): The directory where the cloned site content will go
+`--webdriver` (required): The webdriver that selinium will use to scrape the site with (Options are chrome, firefox, edge, and safari)
+`--verbose`: Print extra output to the console
+`--quiet`: Print less output to thte console
+`--use-sitemap`: Start the scrape at /sitemap.xml to hit more pages
+`--no-use-sitemap`: Don't start the scrape at /sitemap.xml
+`--custom-localdomain`: Allow resources from a given domain to the accessed as if they were on the same site
+`--force-https`: Force the scraper to use https
+`--no-force-https`: Opposite of --force-https
 
-### Search for css stylesheets that are unused (IF YOU DONT HAVE DATABASE)
+### Analyze the website
 
-`python3 manage.py analyze_html_in_database --base-url "https://education.byu.edu" --css-directory "/Volumes/education22/Education/web/themes/custom/canvas/css" --js-directory "/Volumes/education22/Education/web/themes/custom/canvas"`
+`python3 css.py analyze --html-dir clone/ --markdown-dir output --verbose`
 
-`--base-url` (required): What website you are searching the directories for  
-`--css-directory` (required): What directory do you want to search for css files?  
-`--js-directoy` (required): same as css-directory
-
-### Search for usage of classes in a specific css stylesheet:
-
-This isn't completely accurate as it will pull things like urls, and multiline classes like .card-title>h4 but it does an alright job at pulling the css classes. Obviously could be improved, but this was just put together in a couple minutes.
-
-`python3 manage.py analyze_css_stylesheet --base-url "https://education.byu.edu" --css-file-path "PATH_TO_CSS_PATH"`
-
-### Search for usage of specific class and/or highest usage classes
-
-`python3 manage.py css_usage --base-url "https://education.byu.edu" --html-attribute .whatever`  
-  
-`--html-attribute` is the attribute you want to search for (optional)
-
-## Feel free to progam more commands in `csscleanup/apps/scraper/management/commands`
-Here are some that could be useful:
-1. A command that searches where a specific html attribute is used in the html (can use HtmlPage object)
-2. A command that shows where a CSS style is in the css files in a diretory
+`--html-dir` (required): The root directory of the cloned website
+`--markdown-dir` (required): The directory the output markdown files will go into
+`--verbose`: Print extra output
+`--quiet`: Print less output
+`--inline-styles`: Treat html <style> tags like css stylesheets
+`--no-inline-styles`: Don't treat html <style> tags like css stylesheets

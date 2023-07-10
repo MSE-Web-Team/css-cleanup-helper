@@ -10,7 +10,7 @@ def generate_table(collumns,content):
         padding = len(collumn)
         for c in content[i]:
             if len(str(c))>padding:
-                padding = len(c)
+                padding = len(str(c))
         padding_list.append(padding)
         if i != 0:
             table_string += " | "
@@ -38,7 +38,6 @@ def generate_table(collumns,content):
                 table_string += " |\n"
     return table_string
 
-
 class HtmlClass:
     def __init__(self,name,origin):
         self.name = name
@@ -53,14 +52,10 @@ class HtmlClasses:
         self.class_list = []
     
     def add_class(self,classname,origin):
-        found = False
         for html_class in self.class_list:
             if html_class.name == classname and html_class.origin == origin:
-                found = True
-                html_class.uses += 1
-                break
-        if not found:
-            self.class_list.append(HtmlClass(classname,origin))
+                return
+        self.class_list.append(HtmlClass(classname,origin))
 
     def sort_by_uses(self):
         self.class_list.sort(key=lambda x: x.uses,reverse=True)
@@ -69,6 +64,10 @@ class HtmlClasses:
         for html_class in self.class_list:
             if html_class.name == classname:
                 html_class.uses += 1
+                if classname[0] != "#":
+                    html_class.origin.class_uses += 1
+                else:
+                    html_class.origin.id_uses += 1
                 return True
         return False
 
@@ -79,7 +78,7 @@ class HtmlClasses:
         uses_table = []
         for _class in self.class_list:
             name_table.append(_class.name)
-            origin_table.append(_class.origin)
+            origin_table.append(_class.origin.url)
             uses_table.append(_class.uses)
         table = generate_table(["Class Name","Origin","Uses"],[name_table,origin_table,uses_table])
         return table
@@ -91,6 +90,8 @@ class Stylesheet:
         self.classes = []
         self.inline = False
         self.id_selectors = []
+        self.class_uses = 0
+        self.id_uses = 0
         if content:
             self.inline = True
             self.exists = True
@@ -106,7 +107,9 @@ class Stylesheet:
 
     def populate(self,class_list):
         for _class in self.classes:
-            class_list.add_class(_class,self.url)
+            class_list.add_class(_class,self)
+        for id in self.id_selectors:
+            class_list.add_class(id,self)
 
     def parse(self,css):
         css = re.sub("\/\*[\s\S]*?\*\/","",css) #Remove comments
@@ -120,11 +123,9 @@ class Stylesheet:
         ids = re.findall("\#[a-zA-Z_][\w:-]*(?![^\{]*\})",css)
         ids = self.remove_colon_from_names(ids)
         ids = list(set(ids))
-        for i in range(len(ids)):
-            ids[i] = ids[i].replace("#","")
         #print(f"IDs {self.url}: {ids}")
         self.classes = classes
-        self.id_selectors = ids 
+        self.id_selectors = ids
     
     def remove_colon_from_names(self,names):
         updated_names = []
@@ -135,7 +136,6 @@ class Stylesheet:
             
     def __repr__(self):
         return f"Stylesheet: '{self.url}' : Exists {self.exists} : Inline {self.inline}"
-
 
 class Stylesheets:
     def __init__(self,classes,verbose):
@@ -164,13 +164,18 @@ class Stylesheets:
         class_num_list = []
         id_num_list = []
         inline_list = []
+        class_uses_list = []
+        id_uses_list = []
         for stylesheet in self.sheets:
             url_list.append(stylesheet.url)
             exists_list.append(stylesheet.exists)
             inline_list.append(stylesheet.inline)
             class_num_list.append(len(stylesheet.classes))
             id_num_list.append(len(stylesheet.id_selectors))
-        return generate_table(["File","Exists","Is Inline","Number of Classes","Number of IDs"],[url_list,exists_list,inline_list,class_num_list,id_num_list])
+            class_uses_list.append(stylesheet.class_uses)
+            id_uses_list.append(stylesheet.id_uses)
+            
+        return generate_table(["File","Exists","Is Inline","Number of Classes","Number of IDs","Class Uses","Id Uses"],[url_list,exists_list,inline_list,class_num_list,id_num_list,class_uses_list,id_uses_list])
 
     def __repr__(self):
         string = ""
@@ -178,16 +183,13 @@ class Stylesheets:
             string += str(sheet)+'\n'
         return string
 
-#todo parse each stylesheet as it's added into the stylesheets array in analysisclass for BOTH classes and id selectors
-#add a varible in the htmlclass class for source stylesheet (should be the html file if class comes from a style tag)
-#parse all style tags if they exist in an html file
 class NoDefinitionClasses:
     def __init__(self):
         self.list = []
     
     def add(self,name,file):
         for item in self.list:
-            if item["name"] == name and item["file"] == file:
+            if item["name"] == name: #and item["file"] == file:
                 return
         self.list.append({"name":name,"file":file})
     
@@ -201,7 +203,7 @@ class NoDefinitionClasses:
 
 
 class AnalysisClass:
-    def __init__(self,html_dir,markdown_dir,verbose):
+    def __init__(self,html_dir,markdown_dir,verbose,inline_styles):
         if not os.path.exists(html_dir):
             print(f"Error: directory '{html_dir}' doesn't exist!")
             exit(1)
@@ -216,7 +218,8 @@ class AnalysisClass:
         self.classes = HtmlClasses()
         self.stylesheets = Stylesheets(self.classes,self.verbose)
         self.no_definition_classes = NoDefinitionClasses()
-        
+        self.inline_styles = inline_styles
+
     def start(self):
         cwd = os.getcwd()
         os.chdir(self.html_dir)
@@ -228,11 +231,11 @@ class AnalysisClass:
                 print(f" ({str(i+1).zfill(len(str(len(html_files))))}/{str(len(html_files))}) Analyzing '{file}'")
             self.analyze_file(file)
             #break
-        if self.verbose:
-            print(self.stylesheets)
+        #if self.verbose:
+        #    print(self.stylesheets)
         os.chdir(cwd)
         self.write_output()
-    
+
     def analyze_file(self,file):
         with open(file,"r") as f:
             content = f.read()
@@ -247,7 +250,7 @@ class AnalysisClass:
                         stylesheet = stylesheet[1:]
                         self.stylesheets.add(stylesheet)
             css_style = 1
-            if "style" in tags:
+            if self.inline_styles and "style" in tags:
                 for style in soup.find_all("style"):
                     self.stylesheets.add(file+"_style_"+str(css_style),style.get_text())
                     css_style += 1
@@ -257,8 +260,11 @@ class AnalysisClass:
                         for j in i["class"]:
                             if not self.classes.update_uses(j):
                                 self.no_definition_classes.add(j,file)
+                    if i.has_attr("id") and len(i["id"]) != 0:
+                        id = '#'+i["id"]
+                        if not self.classes.update_uses(id):
+                            self.no_definition_classes.add(id,file)
 
-    
     def write_output(self):
         os.chdir(self.markdown_dir)
         if self.verbose:
@@ -266,9 +272,13 @@ class AnalysisClass:
         with open("class_usage.md","w") as f:
             f.write("# Class Usage\n")
             f.write(self.classes.generate_table_of_uses())
+        if self.verbose:
+            print("Writing Class Not Defined Table")
         with open("not_defined_classes.md","w") as f:
-            f.write("# Classes With No Definitions in stylesheets\n## Note: Most of these are probably in css from outsite the site, or from errors in parsing classes")
+            f.write("# Classes With No Definitions in stylesheets\n## Note: Most of these are probably in css from outsite the site, or from errors in parsing classes\n")
             f.write(self.no_definition_classes.generate_table())
+        if self.verbose:
+            print("Writing Stylesheets Table")
         with open("stylesheets.md","w") as f:
             f.write("# Stylesheets\n")
             f.write(self.stylesheets.generate_table())
