@@ -23,8 +23,9 @@ def scrape_html(base_url,output_dir,webdriver,verbose,use_sitemap,custom_localdo
 @click.option("--markdown-dir",type=str,required=True,help="The directory the results will go into")
 @click.option("--verbose/--quiet",required=False,help="Extra output",default=False)
 @click.option("--inline-styles/--no-inline-styles",required=False,default=False,help="View html <style> tags as their own stylesheets")
-def analyze_html(html_dir,markdown_dir,verbose,inline_styles):
-    analysis = analyze.AnalysisClass(html_dir,markdown_dir,verbose,inline_styles)
+@click.option("--only-content/--full-page",required=False,default=False,help="remove the <header> and <footer> tags from the body")
+def analyze_html(html_dir,markdown_dir,verbose,inline_styles,only_content):
+    analysis = analyze.AnalysisClass(html_dir,markdown_dir,verbose,inline_styles,only_content)
     analysis.start()
 
 

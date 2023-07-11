@@ -243,7 +243,7 @@ class NoDefinitionClasses:
 
 
 class AnalysisClass:
-    def __init__(self,html_dir,markdown_dir,verbose,inline_styles):
+    def __init__(self,html_dir,markdown_dir,verbose,inline_styles,only_content):
         if not os.path.exists(html_dir):
             print(f"Error: directory '{html_dir}' doesn't exist!")
             exit(1)
@@ -259,6 +259,7 @@ class AnalysisClass:
         self.stylesheets = Stylesheets(self.classes,self.verbose)
         self.no_definition_classes = NoDefinitionClasses()
         self.inline_styles = inline_styles
+        self.only_content = only_content
 
     def start(self):
         cwd = os.getcwd()
@@ -280,6 +281,11 @@ class AnalysisClass:
         with open(file,"r") as f:
             content = f.read()
             soup = BeautifulSoup(content,"html.parser")
+            if self.only_content:
+                for header in soup.find_all("header"):
+                    header.extract()
+                for footer in soup.find_all("footer"):
+                    footer.extract()
             tags = {tag.name for tag in soup.find_all()}
             if "link" in tags:
                 for link in soup.find_all("link"):
