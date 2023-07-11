@@ -51,3 +51,33 @@ To Run: python3 css.py scrape --base-url https://education.byu.edu/ --output-dir
 `--quiet`: Print less output    
 `--inline-styles`: Treat html <style> tags like css stylesheets    
 `--no-inline-styles`: Don't treat html <style> tags like css stylesheets    
+
+## Generated Files
+
+### all_class_use.md
+
+all_class_use.md is a very large markdown file that includes every css class or index selector, which html files they are used in, and how many times they are used in that file.  
+To find where a class is used, just search for 'class_name' in the all_class_use.md file.
+
+### class_usage.md
+
+This file includes a list of every class/id used in the project, the stylesheet it comes from, and how many times it was used overall.  
+Note: this also includes classes that aren't used at all. To find unused classes in a stylesheet, do a search for the stylesheet name in class_usage.md, and search until you find the first occurence with 0 uses. They should all be sorted together from there.  
+
+### not_defined_classes.md
+
+This file has a list of every class or id that was in an html file, but not in a stylesheet.  
+
+### stylesheets.md
+
+This file includes a list of every stylesheet inside of the website that was referenced by an html file.  
+
+It has several collumns that are useful for cleaning up css:  
+`File`: The location/name of the stylesheet  
+`Exists`: Whether or not the file exists in the cloned website directory  
+`Is Inline`: True if the stylesheet was created from an html <style> tag (only applicable if --inline-styles was passed into the analyze command)  
+`Number of Classes`: The total number of CSS classes in the stylesheet  
+`Number of IDs`: The total number of CSS id selectors in the stylesheet  
+`Class Uses`: How many times classes from this stylesheet were used on the entire site  
+`Id Uses`: How many times ids from this stylesheet were used on the entire site  
+`Unused Classes+IDs`: The number of classes and IDs from this stylesheet that went unused on the entire site. (See class_usage.md for a list of these)  
