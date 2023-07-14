@@ -55,7 +55,10 @@ class HtmlClasses:
         for html_class in self.class_list:
             if html_class.name == classname and html_class.origin == origin:
                 return
-        self.class_list.append(HtmlClass(classname,origin))
+        _class = HtmlClass(classname,origin)
+        if origin == None:
+            _class.uses.append("None")
+        self.class_list.append(_class)
 
     def sort_by_uses(self):
         self.class_list.sort(key=lambda x: len(x.uses),reverse=True)
@@ -64,10 +67,11 @@ class HtmlClasses:
         for html_class in self.class_list:
             if html_class.name == classname:
                 html_class.uses.append(filename)
-                if classname[0] != "#":
-                    html_class.origin.class_uses += 1
-                else:
-                    html_class.origin.id_uses += 1
+                if html_class.origin:
+                    if classname[0] != "#":
+                        html_class.origin.class_uses += 1
+                    else:
+                        html_class.origin.id_uses += 1
                 return True
         return False
 
@@ -78,7 +82,10 @@ class HtmlClasses:
         uses_table = []
         for _class in self.class_list:
             name_table.append(_class.name)
-            origin_table.append(_class.origin.url)
+            if _class.origin:
+                origin_table.append(_class.origin.url)
+            else:
+                origin_table.append("None")
             uses_table.append(len(_class.uses))
         table = generate_table(["Class Name","Origin","Uses"],[name_table,origin_table,uses_table])
         return table
@@ -86,7 +93,10 @@ class HtmlClasses:
     def generate_table_of_class_use(self,_class):
         if len(_class.uses) == 0:
             return ""
-        out_string = f"\n## Usage for '{_class.name}' from '{_class.origin.url}'\n"
+        url = "None"
+        if _class.origin:
+            url = _class.origin.url
+        out_string = f"\n## Usage for '{_class.name}' from '{url}'\n"
         used_files = list(set(_class.uses)) #remove duplicates
         uses_dict = []
         for file in used_files:
@@ -243,7 +253,7 @@ class NoDefinitionClasses:
 
 
 class AnalysisClass:
-    def __init__(self,html_dir,markdown_dir,verbose,inline_styles,only_content):
+    def __init__(self,html_dir,markdown_dir,verbose,inline_styles,only_content,excluded_dirs):
         if not os.path.exists(html_dir):
             print(f"Error: directory '{html_dir}' doesn't exist!")
             exit(1)
@@ -252,6 +262,13 @@ class AnalysisClass:
             exit(1)
         if not os.path.exists(markdown_dir):
             os.mkdir(markdown_dir)
+        cwd = os.getcwd()
+        os.chdir(html_dir)
+        for dir in excluded_dirs:
+            if not os.path.exists(dir):
+                print(f"Error: Excluded Dir '{dir}' does not exist!")
+                exit(1)
+        os.chdir(cwd)
         self.html_dir = html_dir
         self.markdown_dir = markdown_dir
         self.verbose = verbose
@@ -260,11 +277,13 @@ class AnalysisClass:
         self.no_definition_classes = NoDefinitionClasses()
         self.inline_styles = inline_styles
         self.only_content = only_content
+        self.excluded_dirs = excluded_dirs
 
     def start(self):
         cwd = os.getcwd()
         os.chdir(self.html_dir)
         html_files = glob("**/*.html",recursive=True)
+        html_files = [file for file in html_files if not any(dir in file for dir in self.excluded_dirs)]
         if self.verbose:
             print("Analyzing html files for class usage")
         for i,file in enumerate(html_files):
@@ -282,9 +301,13 @@ class AnalysisClass:
             content = f.read()
             soup = BeautifulSoup(content,"html.parser")
             if self.only_content:
-                for header in soup.find_all("header"):
+                header = soup.find_all("header",id="byu-header")
+                if header:
+                    header = header[0]
                     header.extract()
-                for footer in soup.find_all("footer"):
+                footer = soup.find_all("footer",id="footer")
+                if footer:
+                    footer = footer[0]
                     footer.extract()
             tags = {tag.name for tag in soup.find_all()}
             if "link" in tags:
@@ -305,10 +328,12 @@ class AnalysisClass:
                     if i.has_attr("class") and len(i["class"]) != 0:
                         for j in i["class"]:
                             if not self.classes.update_uses(j,file):
+                                self.classes.add_class(j,None)
                                 self.no_definition_classes.add(j,file)
                     if i.has_attr("id") and len(i["id"]) != 0:
                         id = '#'+i["id"]
                         if not self.classes.update_uses(id,file):
+                            self.classes.add_class(id,None)
                             self.no_definition_classes.add(id,file)
 
     def write_output(self):

@@ -24,8 +24,18 @@ def scrape_html(base_url,output_dir,webdriver,verbose,use_sitemap,custom_localdo
 @click.option("--verbose/--quiet",required=False,help="Extra output",default=False)
 @click.option("--inline-styles/--no-inline-styles",required=False,default=False,help="View html <style> tags as their own stylesheets")
 @click.option("--only-content/--full-page",required=False,default=False,help="remove the <header> and <footer> tags from the body")
-def analyze_html(html_dir,markdown_dir,verbose,inline_styles,only_content):
-    analysis = analyze.AnalysisClass(html_dir,markdown_dir,verbose,inline_styles,only_content)
+@click.option("--excluded-dirs",required=False,default="",type=str,help="don't analyze html pages in these directories")
+def analyze_html(html_dir,markdown_dir,verbose,inline_styles,only_content,excluded_dirs):
+    if excluded_dirs != "":
+        excluded_dirs = excluded_dirs.split(",")
+        excluded_dirs_list = []
+        for dir in excluded_dirs:
+            excluded_dirs_list.append(dir)
+        excluded_dirs = excluded_dirs_list
+        print(excluded_dirs)
+    else:
+        excluded_dirs = []
+    analysis = analyze.AnalysisClass(html_dir,markdown_dir,verbose,inline_styles,only_content,excluded_dirs)
     analysis.start()
 
 

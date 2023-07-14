@@ -3,3 +3,4 @@ venv/
 clone/
 __pycache__
 output/
+output-only-content/
